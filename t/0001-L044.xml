@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diff>
+    <add sel="/language">
+        <page id="531522" title="Blueprint Exchange" voice="no">
+            <t id="1">I want to exchange salvage.</t>
+            <t id="2">blueprint fragments</t>
+
+
+
+            <t id="20">Exchange 10 {531515, 1001} for 10 {531522, 2}.</t>
+            <t id="21">Exchange 2 {531515, 1003} for 10 {531522, 2}.</t>
+            <t id="22">Exchange 1 {531515, 1005} for 10 {531522, 2}.</t>
+        </page>
+    </add>
+</diff>

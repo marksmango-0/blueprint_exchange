@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<content id="bpexchange" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" version="100" date="2019-11-22" save="0">
+	<dependency id="scanbps" optional="false" name="Blueprint Analysis" />
+	<dependency id="scavvers" optional="false" name="Scavengers" />
+  <text language="7" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="33" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="34" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="39" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="44" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="49" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="86" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+  <text language="88" name="Blueprint Exchange" description="Exchange salvage with the Scavengers for blueprint progress"  author="marksmango" />
+</content>

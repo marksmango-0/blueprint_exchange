@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diff>
+
+	<add sel="//library[@name='InitializeStation']/actions/include_actions[@ref='AssignStationDefense']" pos="after">
+		<include_actions ref="CreateRoomWithActor" />
+	</add>
+	
+	<add sel="//cue[@name='PlaceScavengerStations']/cues" >
+		<library name="CreateRoomWithActor">
+			<actions>
+				<create_cue_actor name="$Mission_Contact" cue="namespace" group="scavenger.factionrepresentative">
+					<page exact="10101"/>
+					<owner exact="faction.scavenger"/>
+					<skills>
+						<skill type="management" min="12" max="15"/>
+						<skill type="morale" min="12" max="15"/>
+						<skill type="piloting" min="6" max="15"/>
+						<skill type="engineering" min="6" max="15"/>
+						<skill type="boarding" min="6" max="15"/>
+					</skills>
+				</create_cue_actor>
+				<set_entity_traits entity="$Mission_Contact" missionactor="true" customhandler="true"/>
+
+				<get_room_definition macro="$CorridorMacro" doors="$CorridorDoors" tags="tag.corridor" />
+				<get_room_definition macro="$RoomMacro" doors="$RoomDoors" tags="tag.infrastructure" />
+
+				<create_dynamic_interior object="$Station" name="'Blueprint Research Lab'" corridor="$CorridorMacro" room="$RoomMacro" interiorname="$Interior" corridorname="$Corridor" roomname="$Room" />
+				<find_npc_slot name="$RoomSlot" object="$Room" />
+				<do_if value="$RoomSlot">
+					<debug_text text="'We have found a room slot on which to place the mission giver'" />
+					<add_actor_to_room actor="$Mission_Contact" slot="$RoomSlot" />
+				</do_if>
+				<add_to_group groupname="$BlueprintTraders" object="$Mission_Contact" />
+			</actions>
+		</library>
+		<cue name="StartConversation" instantiate="true">
+			<conditions>
+				<check_any>
+					<check_all>
+						<event_conversation_started/>
+						<check_value value="$BlueprintTraders.indexof.{event.object}" />
+					</check_all>
+					<check_all>
+						<event_conversation_returned_to_section section="default" />
+					</check_all>
+				</check_any>
+			</conditions>
+			<actions>
+				<add_player_choice_sub text="'Trade salvage for blueprints'" tooltip="'Hi'" section="exchange_menu" choiceparam="event.object" />
+			</actions>
+		</cue>
+
+		<cue name="exchange_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section section="exchange_menu" />
+			</conditions>
+			<actions>
+				<!-- TODO use t file text for content and inventory items  -->
+				<add_player_choice_sub text="'Exhange 10 junk salvage '" selectable="player.entity.inventory.{ware.inv_sm_salvage}.count ge 10" tooltip="'10 salvage for 10 fragments'" section="scv_lowsalvage" />
+				<add_player_choice_sub text="'Exhange 5 medium salvage '" selectable="player.entity.inventory.{ware.inv_med_salvage}.count ge 5" tooltip="'5 salvage for 10 fragments'" section="scv_medsalvage" />
+				<add_player_choice_sub text="'Exhange 1 good salvage'"  selectable="player.entity.inventory.{ware.inv_lg_salvage}.count ge 1" tooltip="'1 salvage for 10 fragments'" section="scv_highsalvage" />
+				
+				<add_player_choice_sub text="'Apply blueprint fragments'" tooltip="'1 salvage for 10 fragments'" section="bpe_apply_blueprints" />
+			</actions>
+		</cue>
+		<cue name="complete_exchange" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="scv_" />
+			</conditions>
+			<actions>
+				<!-- TODO use t file text for content and inventory items   selectable="player.entity.inventory.{$seminarware}.exists"-->
+				<do_if value="event.param == 'scv_lowsalvage'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.AddFragmentsExternal" param="10" />
+				</do_if>
+				<do_if value="event.param == 'scv_medsalvage'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.AddFragmentsExternal" param="10" />
+				</do_if>
+				<do_if value="event.param == 'scv_highsalvage'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.AddFragmentsExternal" param="10" />
+				</do_if>
+				<do_if value="event.param == 'scv_apply_blueprints'" >
+					<signal_cue_instantly cue="Exchange_menu" />
+				</do_if>
+
+			</actions>
+		</cue>
+		<cue name="Exchange_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="bpe_apply" />
+			</conditions>
+			<actions>
+				<add_player_choice_sub text="'Modules '" section="bpe_modules" />
+				<add_player_choice_sub text="'Ships'" section="bpe_ships" />
+				<add_player_choice_sub text="'Equipment'" section="bpe_equipment" />
+			</actions>
+			
+		</cue>
+		<cue name="Module_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section section="bpe_modules" />
+			</conditions>
+			<actions>
+				<add_player_choice_sub text="'Build modules '" section="bpe_module_buildmodule" comment="Build module menu"/>
+				<add_player_choice_sub text="'Connection modules'" section="bpe_module_connectionmodule" comment="Connection module menu"/>
+				<add_player_choice_sub text="'Defence modules'"  section="bpe_module_defencemodule" comment="Defence module menu"/>
+				<add_player_choice_sub text="'Dock modules'"  section="bpe_module_dockmodule" comment="Dock module menu"/>
+				<add_player_choice_sub text="'Habitation modules'"  section="bpe_module_habitationmodule" comment="Habitation module menu"/>
+				<add_player_choice_sub text="'More....'"  section="bpe_modules_more" comment="Modules page 2"/>
+			</actions>
+			
+		</cue>
+		<cue name="Module_menu2" instantiate="true">
+			<conditions>
+				<event_conversation_next_section section="bpe_modules_more" />
+			</conditions>
+			<actions>
+				
+				<add_player_choice_sub text="'Production modules'"  section="bpe_module_productionmodule" comment="Production module menu"/>
+				<add_player_choice_sub text="'Storage modules'"  section="bpe_module_storagemodule" comment="Storage module menu"/>
+				<add_player_choice_sub text="'Back....'"  section="bpe_modules" comment="Modules page 1"/>
+			</actions>
+			
+		</cue>
+		<cue name="Ship_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="bpe_ships" />
+			</conditions>
+			<actions>
+				<add_player_choice_sub text="'XS ship'" section="bpe_ship_xsships" />
+				<add_player_choice_sub text="'S ships'" section="bpe_ship_sships" />
+				<add_player_choice_sub text="'M ships'"  section="bpe_ship_mships" />
+				<add_player_choice_sub text="'L ships'"  section="bpe_ship_lships" />
+				<add_player_choice_sub text="'XL ships'"  section="bpe_ship_xlships" />
+			</actions>
+			
+		</cue>
+		<cue name="Select_module_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="bpe_module_" />
+			</conditions>
+			<actions>
+				<do_if value="event.param == 'bpe_module_buildmodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Buildmodule_Menu" />
+				</do_if>
+				<do_if value="event.param == 'bpe_module_connectionmodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Connection_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_module_dockmodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Dock_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_module_defencemodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Defence_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_module_habitationmodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Habitation_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_module_productionmodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Production_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_module_storagemodule'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Storage_Menu" param="10" />
+				</do_if>
+			</actions>
+		</cue>		
+		<cue name="Select_ship_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="bpe_ship_" />
+			</conditions>
+			<actions>
+				<do_if value="event.param == 'bpe_ship_xsships'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.XS_Ship_Menu" />
+				</do_if>
+				<do_if value="event.param == 'bpe_ship_sships'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.S_Ship_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_ship_mships'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.M_Ship_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_ship_lships'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.L_Ship_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_ship_xlships'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.XL_Ship_Menu" param="10" />
+				</do_if>
+			</actions>
+		</cue>
+		<cue name="equipment_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="bpe_equipment" />
+			</conditions>
+			<actions>
+				<add_player_choice_sub text="'Modules '" selectable="player.entity.inventory.{ware.inv_sm_salvage}.count ge 10" tooltip="'10 salvage for 10 fragments'" section="scv_lowsalvage" />
+				<add_player_choice_sub text="'Ships'" selectable="player.entity.inventory.{ware.inv_med_salvage}.count ge 5" tooltip="'5 salvage for 10 fragments'" section="scv_medsalvage" />
+				<add_player_choice_sub text="'Equipment'"  selectable="player.entity.inventory.{ware.inv_lg_salvage}.count ge 1" tooltip="'1 salvage for 10 fragments'" section="scv_highsalvage" />
+			</actions>
+			
+		</cue>
+	</add>
+</diff>

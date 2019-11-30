@@ -1,0 +1,633 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<mdscript name="BlueprintExchange" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+	<cues>
+	<cue name="InitScanningModule" instantiate="false" namespace="this">
+			<actions>
+					<set_value name="$scanned" exact="table[]" />
+					<set_value name="$scanrequirements" exact="table[]" />
+					<set_value name="$fragmentcount" exact="500" />
+			</actions>
+			<cues>
+					<!--rather than set a global, getscanned calls md.BlueprintAnalysis to call ReceiveScanned with the value. almost certain there's a better way, but this works -->
+					<library name="GetScanned" >
+						<actions>
+							<signal_cue_instantly cue="md.BlueprintAnalysis.SendScanned" />
+						</actions>
+					</library>
+					<cue name="ReceiveScanned" instantiate="true">
+						<conditions>
+							<event_cue_signalled />
+						</conditions>
+						<actions>
+							<set_value name="$scanned" exact="event.param.{1}" />
+							<set_value name="$scanrequirements" exact="event.param.{2}" />
+						</actions>
+					</cue>
+					<cue name="SpendBlueprintFragments" instantiate="true">
+						<conditions>
+							<event_cue_signalled />
+						</conditions>
+						<actions>
+							<set_value name="$macro" exact="event.param.$echo.$macro" />
+							<set_value name="$increase" exact="event.param.$echo.$increase" />
+							<signal_cue_instantly cue="md.BlueprintAnalysis.ExternalIncrease" param="[$macro, $increase]"/>
+							<set_value name="$fragmentcount" exact="$increase" operation="subtract" />
+							<signal_cue_instantly cue="event.param.$echo.$menuname"/>
+						</actions>
+					</cue>
+					<library name="AddExchangeHeader">
+						<actions>
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<set_value name="$CurrencyName" exact="'Blueprint Fragments: '" />
+							<set_value name="$CurrencyAmount" exact="$fragmentcount" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+								$col=1, 
+								$colSpan=4,
+								$text=$CurrencyName, 
+								$halign='left',
+								$color='Helper.color.white',
+								$titleColor='Helper.color.grey',
+								]" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+								$id='count_currency',
+								$col=5,
+								$colSpan=2,
+								$text=$CurrencyAmount,
+								$halign='center',
+								$icon='warning',
+								$titleColor='Helper.color.grey',
+								]" />
+						</actions>
+					</library>
+					<library name="AddBlueprintExchangeRow">
+						<actions>
+							<do_if value="$Value.$count gt 0 and $Value.$count lt $scanrequirements.{$Value.$objectmacro.class}" >
+								<set_value name="$currentmenu" exact="this.staticbase" />
+								<set_value name="$hasentries" exact="true" />
+								<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+								<set_value name="$Text" exact="$Value.$name" />
+								<set_value name="$Current" exact="$Value.$count" />
+								<set_value name="$Required" exact="$scanrequirements.{$Value.$objectmacro.class}" />
+								<set_value name="$HasCurrency" exact="true" />
+								<do_if value="player.blueprints.{$Value.$objectmacro.ware}.any.exists" >
+									<set_value name="$ProgressText" exact="'Complete'" />
+								</do_if>
+								<do_else>
+									<set_value name="$ProgressText" exact="$Current + ' / ' + $Required" />
+								</do_else>
+
+								<signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+									$col=1,
+									$colSpan=3,
+									$mouseOverText=$Text,
+									$text = $Text,
+									]" />
+								<signal_cue_instantly cue="md.Simple_Menu_API.Make_Text" param="table[
+									$col=4,
+									$colSpan=1,
+									$halign='center',
+									$text = $ProgressText,
+									$color=table[ $r = 200, $g = 200, $b = 200, $a = 100 ],
+									]" />
+								<signal_cue_instantly cue="md.Simple_Menu_API.Make_Button" param="table[
+									$col=5,
+									$colSpan=1,
+									$active= $fragmentcount ge 1,
+									$icon = table[$icon='warning', $color='Helper.color.grey', $halign='left'],
+									$text = table[$text='1', $color='Helper.color.brightyellow', $halign='right'],
+									$onClick=SpendBlueprintFragments,
+									$echo = table[$macro=$Value.$objectmacro, $increase=1, $menuname=$currentmenu],
+									]" />	
+								<signal_cue_instantly cue="md.Simple_Menu_API.Make_Button" param="table[
+									$col=6,
+									$colSpan=1,
+									$active = $fragmentcount ge 10,
+									$icon = table[$icon='warning', $color='Helper.color.grey', $halign='left'],
+									$text = table[$text='10', $color='Helper.color.brightyellow', $halign='right'],
+									$onClick=SpendBlueprintFragments,
+									$echo = table[$macro=$Value.$objectmacro, $increase=10, $menuname = $currentmenu],
+									]" />	
+								<signal_cue_instantly cue="md.Simple_Menu_API.Make_Button" param="table[
+									$col=7,
+									$colSpan=1,
+									$active = $fragmentcount ge 25,
+									$icon = table[$icon='warning', $color='Helper.color.grey', $halign='left'],
+									$text = table[$text='25', $color='Helper.color.brightyellow', $halign='right'],
+									$onClick=SpendBlueprintFragments,
+									$echo = table[$macro=$Value.$objectmacro, $increase=25, $menuname=$currentmenu],
+									]" />	
+							</do_if>
+						</actions>				
+					</library>
+					
+					<cue name="AddFragmentsExternal" instantiate="true">
+						<conditions>
+							<event_cue_signalled />
+						</conditions>
+						<actions>
+							<set_value name="$fragmentcount" exact="event.param" operation="add" />
+						</actions>
+					</cue>
+
+					<!-- none of these 'main' menus are currently used since this was converted to standalone -->
+					<cue name="Main_Menu" instantiate="true">
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<!-- copied from register options, that doesn't need to exist anymore -->
+						
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+						  param = "table[
+							$id      = 'blueprint_exchange_menu',
+							$width	 = '800',
+							$heigh 	 = '1000',
+							$columns = 7, 
+							$title   = 'Blueprint Exchange'
+							]"/>
+						
+						<!-- get list of known but unfinished bps, get currencty amount -->
+							<include_actions ref="GetScanned" />
+							<include_actions ref="AddExchangeHeader" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Make_Button" param="table[
+									$col=1,
+									$colSpan=5,
+									$text =table[$text='Modules', $color='Helper.color.brightyellow', $halign='right'],
+									$onClick=Module_Menu,
+									]" />	
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Make_Button" param="table[
+									$col=1,
+									$colSpan=5,
+									$text =table[$text='Ships', $color='Helper.color.brightyellow', $halign='right'],
+									$onClick=Ship_Menu,
+									]" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Make_Button" param="table[
+									$col=1,
+									$colSpan=5,
+									$text =table[$text='Equipment', $color='Helper.color.brightyellow', $halign='center'],
+									$onClick=Equipment_Menu,
+									]" />
+							<!--<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Modules', $id='module_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Ships', $id='ship_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Equipment', $id='equipment_exchange_menu']" />-->
+						</actions>
+					</cue>
+					
+					<cue name="Module_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'module_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Module Exchange'
+								]"/>
+							<!--<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Build Modules', $id='buildmodule_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Connection Modules', $id='connection_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Defence Modules', $id='defence_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Dock Modules', $id='dock_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Habitation Modules', $id='habitation_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Production Modules', $id='production_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Storage Modules', $id='storage_exchange_menu']" />-->
+						</actions>
+					</cue>
+					<cue name="Ship_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+							<!--<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='XS Ships', $id='xsship_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='S Ships', $id='sship_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='M Ships', $id='mship_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='L Ships', $id='lship_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='XL Ships', $id='xlship_exchange_menu']" />-->
+
+						</actions>
+					</cue>
+					<cue name="Equipment_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Weapons', $id='weapon_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Shields', $id='shield_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Engines', $id='engine_exchange_menu']" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Submenu_Link" param="table[$text='Turrets', $id='turret_exchange_menu']" />
+						</actions>
+					</cue>
+					
+					<cue name="Buildmodule_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<include_actions ref="AddExchangeHeader" /> 
+						<include_actions ref="GetScanned" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'buildmodule_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Build Module Exchange'
+								]"/>
+							<set_value name="$hasentries" exact="false" />
+							<set_value name="$currentmenu" exact="Buildmodule_Menu" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.buildmodule]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Connection_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'connection_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Connection Module Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.connectionmodule]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Defence_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'defence_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Defence Module Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.defencemodule]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Dock_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'dock_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Dock Module Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.pier, class.dockarea]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Habitation_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'habitation_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Habitation Module Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.habitation]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Production_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'production_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Production Module Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" /> 
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.production]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Storage_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'storage_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Storage Module Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.storage]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					
+					<cue name="XS_Ship_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'xsship_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'XS Ship Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.ship_xs]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="S_Ship_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'sship_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'S Ship Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.ship_s]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="M_Ship_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'mship_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'M Ship Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.ship_m]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="L_Ship_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'lship_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'L Ship Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.ship_l]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="XL_Ship_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'xlship_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'XL Ship Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.ship_xl]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					
+					<cue name="Weapon_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'weapon_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Weapon Exchange'
+								]"/>
+							<include_actions ref="AddExchangeHeader" />
+							<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.weapon]} and not $Value.$objectmacro.isclass.{[class.turret]} and not $Value.$objectmacro.isclass.{[class.missile]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Shield_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+						<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'shield_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Shield Exchange'
+								]"/>
+						<include_actions ref="AddExchangeHeader" />
+						<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.shieldgenerator]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Engine_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+						<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'engine_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Engine Exchange'
+								]"/>
+							<include_actions ref="AddExchangeHeader" />
+							<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.engine]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+					<cue name="Turret_Menu" instantiate="true" >
+						<conditions>
+							<event_cue_signalled/>
+						</conditions>
+						<actions>
+							<signal_cue_instantly cue="md.Simple_Menu_API.Add_Row" />
+							<signal_cue_instantly cue="md.Simple_Menu_API.Create_Menu"
+							  param = "table[
+								$id      = 'turret_exchange_menu',
+								$width	 = '800',
+								$heigh 	 = '1000',
+								$columns = 7, 
+								$title   = 'Turret Exchange'
+								]"/>
+							<include_actions ref="AddExchangeHeader" />
+							<include_actions ref="GetScanned" />
+							<set_value name="$hasentries" exact="false" />
+							<do_for_each in="$scanned" valuename="$Value">
+								<do_if value="$Value.$objectmacro.isclass.{[class.turret]}">
+									<include_actions ref="AddBlueprintExchangeRow" />
+								</do_if>
+							</do_for_each>
+							<include_actions ref="md.BlueprintAnalysis.AddEmptyMessage" />
+						</actions>
+					</cue>
+				</cues>
+		</cue>
+	</cues>
+</mdscript>
