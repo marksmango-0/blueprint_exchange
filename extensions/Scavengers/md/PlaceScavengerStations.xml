@@ -81,7 +81,6 @@
 				<do_if value="event.param == 'scv_apply_blueprints'" >
 					<signal_cue_instantly cue="Exchange_menu" />
 				</do_if>
-
 			</actions>
 		</cue>
 		<cue name="Exchange_menu" instantiate="true">
@@ -93,7 +92,6 @@
 				<add_player_choice_sub text="'Ships'" section="bpe_ships" />
 				<add_player_choice_sub text="'Equipment'" section="bpe_equipment" />
 			</actions>
-			
 		</cue>
 		<cue name="Module_menu" instantiate="true">
 			<conditions>
@@ -107,19 +105,16 @@
 				<add_player_choice_sub text="'Habitation modules'"  section="bpe_module_habitationmodule" comment="Habitation module menu"/>
 				<add_player_choice_sub text="'More....'"  section="bpe_modules_more" comment="Modules page 2"/>
 			</actions>
-			
 		</cue>
 		<cue name="Module_menu2" instantiate="true">
 			<conditions>
 				<event_conversation_next_section section="bpe_modules_more" />
 			</conditions>
 			<actions>
-				
 				<add_player_choice_sub text="'Production modules'"  section="bpe_module_productionmodule" comment="Production module menu"/>
 				<add_player_choice_sub text="'Storage modules'"  section="bpe_module_storagemodule" comment="Storage module menu"/>
 				<add_player_choice_sub text="'Back....'"  section="bpe_modules" comment="Modules page 1"/>
 			</actions>
-			
 		</cue>
 		<cue name="Ship_menu" instantiate="true">
 			<conditions>
@@ -132,7 +127,17 @@
 				<add_player_choice_sub text="'L ships'"  section="bpe_ship_lships" />
 				<add_player_choice_sub text="'XL ships'"  section="bpe_ship_xlships" />
 			</actions>
-			
+		</cue>
+		<cue name="Equipment_menu" instantiate="true">
+			<conditions>
+				<event_conversation_next_section sectionprefix="bpe_equipment" />
+			</conditions>
+			<actions>
+				<add_player_choice_sub text="'Weapons'" section="bpe_equipment_weapons" />
+				<add_player_choice_sub text="'Shields'" section="bpe_equipment_shields" />
+				<add_player_choice_sub text="'Engines'"  section="bpe_equipment_engines" />
+				<add_player_choice_sub text="'Turrets'"  section="bpe_equipment_turrets" />
+			</actions>
 		</cue>
 		<cue name="Select_module_menu" instantiate="true">
 			<conditions>
@@ -184,16 +189,25 @@
 				</do_if>
 			</actions>
 		</cue>
-		<cue name="equipment_menu" instantiate="true">
+		
+		<cue name="Select_equipment_menu" instantiate="true">
 			<conditions>
-				<event_conversation_next_section sectionprefix="bpe_equipment" />
+				<event_conversation_next_section sectionprefix="bpe_equipment_" />
 			</conditions>
 			<actions>
-				<add_player_choice_sub text="'Modules '" selectable="player.entity.inventory.{ware.inv_sm_salvage}.count ge 10" tooltip="'10 salvage for 10 fragments'" section="scv_lowsalvage" />
-				<add_player_choice_sub text="'Ships'" selectable="player.entity.inventory.{ware.inv_med_salvage}.count ge 5" tooltip="'5 salvage for 10 fragments'" section="scv_medsalvage" />
-				<add_player_choice_sub text="'Equipment'"  selectable="player.entity.inventory.{ware.inv_lg_salvage}.count ge 1" tooltip="'1 salvage for 10 fragments'" section="scv_highsalvage" />
+				<do_if value="event.param == 'bpe_equipment_weapons'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Weapon_Menu" />
+				</do_if>
+				<do_if value="event.param == 'bpe_equipment_shields'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Shield_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_equipment_engines'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Engine_Menu" param="10" />
+				</do_if>
+				<do_if value="event.param == 'bpe_equipment_turrets'" >
+					<signal_cue_instantly cue="md.BlueprintExchange.Turret_Menu" param="10" />
+				</do_if>
 			</actions>
-			
 		</cue>
 	</add>
 </diff>
